@@ -10,9 +10,7 @@ SECRET_KEY = os.environ["R2_SECRET_KEY"]
 BUCKET_NAME = "tables"
 RAW_KEY = "raw/bigdata.json"
 
-SETS = 10
-TABLES_PER_SET = 10
-TOTAL_NEEDED = SETS * TABLES_PER_SET
+TOTAL_FILES = 100  # 100 ayrı json üretilecek
 
 s3 = boto3.client(
     "s3",
@@ -29,28 +27,26 @@ with open("bigdata.json", "r", encoding="utf-8") as f:
 
 TOTAL_TABLES = len(tables)
 
+if TOTAL_TABLES == 0:
+    raise Exception("JSON içinde tablo yok!")
+
+# Gün bazlı başlangıç indexi
 day_of_year = datetime.utcnow().timetuple().tm_yday
-start_index = (day_of_year * TOTAL_NEEDED) % TOTAL_TABLES
-end_index = start_index + TOTAL_NEEDED
+start_index = (day_of_year * TOTAL_FILES) % TOTAL_TABLES
 
-selected_tables = tables[start_index:end_index]
+selected_tables = []
 
-# Eğer sonu aşarsa başa sar
-if len(selected_tables) < TOTAL_NEEDED:
-    remaining = TOTAL_NEEDED - len(selected_tables)
-    selected_tables += tables[0:remaining]
+for i in range(TOTAL_FILES):
+    index = (start_index + i) % TOTAL_TABLES
+    selected_tables.append(tables[index])
 
-# 10 ayrı dosya üret
-for i in range(SETS):
-    start = i * TABLES_PER_SET
-    end = start + TABLES_PER_SET
-    subset = selected_tables[start:end]
-
-    filename = f"set{i+1}.json"
+# 100 ayrı dosya üret (her biri 1 tablo)
+for i, table in enumerate(selected_tables):
+    filename = f"table_{i+1}.json"
 
     with open(filename, "w", encoding="utf-8") as f:
-        json.dump(subset, f, ensure_ascii=False)
+        json.dump(table, f, ensure_ascii=False)
 
     s3.upload_file(filename, BUCKET_NAME, f"public/{filename}")
 
-print("10 set başarıyla yüklendi.")
+print("100 tablo başarıyla üretildi ve yüklendi.")
