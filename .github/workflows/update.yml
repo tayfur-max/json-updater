@@ -2,7 +2,7 @@ name: Update JSON Daily
 
 on:
   schedule:
-    - cron: "0 0 * * *"   # UTC 00:00 (Türkiye 03:00)
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install boto3
+        run: pip install boto3 ijson
 
       - name: Run script
         env:
