@@ -1,6 +1,7 @@
 import json
 import boto3
 import os
+import ijson
 from datetime import datetime
 
 ACCOUNT_ID = os.environ["R2_ACCOUNT_ID"]
@@ -27,6 +28,22 @@ s3 = boto3.client(
 
 day_of_year = datetime.utcnow().timetuple().tm_yday
 
+
+def count_tables(filename):
+    count = 0
+    with open(filename, "rb") as f:
+        for _ in ijson.items(f, "item"):
+            count += 1
+    return count
+
+
+def get_table(filename, target_index):
+    with open(filename, "rb") as f:
+        for i, table in enumerate(ijson.items(f, "item")):
+            if i == target_index:
+                return table
+
+
 for mode, key in DATASETS.items():
 
     local_file = f"{mode}.json"
@@ -35,20 +52,19 @@ for mode, key in DATASETS.items():
 
     s3.download_file(BUCKET_NAME, key, local_file)
 
-    with open(local_file, "r", encoding="utf-8") as f:
-        tables = json.load(f)
+    print("Tablo sayısı hesaplanıyor...")
 
-    TOTAL_TABLES = len(tables)
+    TOTAL_TABLES = count_tables(local_file)
 
-    if TOTAL_TABLES == 0:
-        raise Exception(f"{mode} JSON içinde tablo yok!")
+    print("Toplam tablo:", TOTAL_TABLES)
 
     start_index = (day_of_year * TOTAL_FILES) % TOTAL_TABLES
 
     for i in range(TOTAL_FILES):
 
         index = (start_index + i) % TOTAL_TABLES
-        table = tables[index]
+
+        table = get_table(local_file, index)
 
         filename = f"{mode}_table_{i+1}.json"
 
@@ -61,6 +77,6 @@ for mode, key in DATASETS.items():
             f"public/{mode}/{filename}"
         )
 
-    print(f"{mode} için 100 tablo üretildi.")
+    print(f"{mode} tamamlandı.")
 
-print("Tüm modlar tamamlandı.")
+print("Tüm modlar üretildi.")
