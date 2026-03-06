@@ -31,14 +31,14 @@ day_of_year = datetime.utcnow().timetuple().tm_yday
 
 def count_tables(filename):
     count = 0
-    with open(filename, "rb") as f:
+    with open(filename, "r", encoding="utf-8-sig") as f:
         for _ in ijson.items(f, "item"):
             count += 1
     return count
 
 
 def get_table(filename, target_index):
-    with open(filename, "rb") as f:
+    with open(filename, "r", encoding="utf-8-sig") as f:
         for i, table in enumerate(ijson.items(f, "item")):
             if i == target_index:
                 return table
