@@ -13,9 +13,9 @@ TOTAL_FILES = 100
 
 DATASETS = {
     "classic": "raw/bigdata.json",
-    "super_ligue": "raw/super_ligue.json",
+    "ligue1": "raw/ligue1.json",
     "premier_ligue": "raw/premier_ligue.json",
-    "ligue1": "raw/ligue1.json"
+    "super_ligue": "raw/super_ligue.json"
 }
 
 s3 = boto3.client(
@@ -31,7 +31,8 @@ for mode, key in DATASETS.items():
 
     local_file = f"{mode}.json"
 
-    # indir
+    print(f"{mode} indiriliyor...")
+
     s3.download_file(BUCKET_NAME, key, local_file)
 
     with open(local_file, "r", encoding="utf-8") as f:
@@ -45,6 +46,7 @@ for mode, key in DATASETS.items():
     start_index = (day_of_year * TOTAL_FILES) % TOTAL_TABLES
 
     for i in range(TOTAL_FILES):
+
         index = (start_index + i) % TOTAL_TABLES
         table = tables[index]
 
